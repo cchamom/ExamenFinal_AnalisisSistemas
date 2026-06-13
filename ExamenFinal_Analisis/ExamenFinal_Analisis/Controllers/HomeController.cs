@@ -1,32 +1,24 @@
-using System.Diagnostics;
-using ExamenFinal_Analisis.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ExamenFinal_Analisis.Controllers
 {
-    public class HomeController : Controller
+    [ApiController]
+    [Route("")] // Escucha en la raíz del sitio (http://localhost:5000/)
+    public class HomeController : ControllerBase
     {
-        private readonly ILogger<HomeController> _logger;
-
-        public HomeController(ILogger<HomeController> logger)
-        {
-            _logger = logger;
-        }
-
+        [HttpGet]
         public IActionResult Index()
         {
-            return View();
-        }
-
-        public IActionResult Privacy()
-        {
-            return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            return Ok(new { 
+                sistema = "API de Envíos Rápidos GT", 
+                estado = "Operacional", 
+                baseDatos = "SQLite Conectada",
+                documentacion = new {
+                    registrarPaquete = "POST /api/paquetes/nuevo",
+                    rastrearPaquete = "GET /api/paquetes/rastreo/{codigo}",
+                    actualizarEstado = "POST /api/pruebaapi/actualizar"
+                }
+            });
         }
     }
 }
