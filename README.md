@@ -1,3 +1,18 @@
+# Despliegue en Producción (Render)
+
+La API se encuentra completamente desplegada, configurada y operativa en la nube a través de la infraestructura de Render.
+
+* **Enlace Base de la API:**   [https://examenfinal-analisissistemas.onrender.com](https://examenfinal-analisissistemas.onrender.com)
+
+### 1. Estado de la Aplicación (Health Check)
+* **Método:** `GET`
+* **URL:** `https://examenfinal-analisissistemas.onrender.com/`
+* **Descripción:** Devuelve un JSON con el estado operacional del sistema, la confirmación de la conexión a la base de datos SQLite y el listado de endpoints disponibles.
+
+### 2. Registrar un Nuevo Paquete
+* **Método:** `POST`
+* **URL:** `https://examenfinal-analisissistemas.onrender.com/api/paquetes`
+---
 
 # Historias de Usuario (Product Backlog)
 
@@ -83,6 +98,69 @@
   * Al arrancar la aplicación por primera vez en cualquier entorno limpio, la tabla `Estados` debe poblarse automáticamente con los registros del 1 al 5.
   * Los valores de prioridad lógica (`Orden`) deben persistirse de manera estricta para asegurar el correcto funcionamiento de las validaciones de flujo de la HU06.
 
+---
+Aquí tienes el informe completo estructurado exactamente en formato **README.md** con bloques de código Markdown listos para que los agregues directamente a tu repositorio o documento de entrega:
+
+```markdown
+# INFORME TÉCNICO: BITÁCORA DE DESARROLLO Y ASEGURAMIENTO DE CALIDAD
+### 🎓 Ingeniería en Sistemas - Séptimo Semestre (UMG)
+**Estudiante:** Cristian Chamo  
+**Proyecto:** Examen Final – Sistema de Envíos Rápidos GT  
+
+---
+
+## 🤖 1. Identificación de la Inteligencia Artificial Utilizada
+* **Modelo Utilizado:** Gemini (Modelo de lenguaje avanzado de Google).
+* **Rol en el proyecto:** Copiloto de desarrollo (*Pair Programming*), depurador de entornos de ejecución de .NET y asesor de infraestructura en la nube.
+
+---
+
+## 📝 2. Detalle de Prompts Enviados y Flujo de Trabajo
+
+A continuación, se presentan las instrucciones y capturas lógicas de los prompts reales utilizados para guiar la resolución de los problemas del proyecto:
+
+### 🔹 Fase 1: Diagnóstico de Errores de Compilación y Versiones (.NET 9)
+* **Contexto del Prompt:** Se le compartieron a la IA los logs de error de la consola donde el compilador fallaba debido a que la suite de herramientas locales (`Dotnet Tools`) arrastraba configuraciones experimentales en conflicto con el SDK estable de .NET 9, junto con dependencias rotas en las rutas relativas del archivo `.csproj`.
+* **Respuesta y Solución:** La IA detectó el desfase y guio la edición manual de los metadatos del proyecto de pruebas. Se forzó el uso estricto de Entity Framework Core en su versión estable `9.0.0` y se reparó la referencia cruzada utilizando la ruta de escape de nivel `..\..\`.
+
+### 🔹 Fase 2: Sincronización de Lógica de Negocio en Pruebas Unitarias (xUnit)
+* **Contexto del Prompt:** Se envió el código base del simulador de persistencia. El sistema fallaba al evaluar la regla de negocio más importante (el cambio automático a estado *"En Devolución"* tras acumular 3 intentos de entrega fallidos) debido a la volatilidad de la base de datos en memoria.
+* **Respuesta y Solución:** Se reestructuró la suite de pruebas unitarias (`PaqueteServiceTests.cs`). La IA aplicó técnicas de desacoplamiento de caché de entidades para obligar al motor `UseInMemoryDatabase` a evaluar los impactos de forma aislada y real, logrando exitosamente el estado verde (3/3 pruebas aprobadas).
+
+### 🔹 Fase 3: Purga de Binarios y Preparación del Entorno
+* **Contexto del Prompt:** *“no quiero subir los obj y bien, dame el comando para quitarlos”*
+* **Respuesta y Solución:** Se proveyó un script nativo de automatización para la terminal de comandos de Windows (PowerShell) con el fin de desintegrar de forma masiva los directorios residuales del compilador local, aliviando el peso del proyecto antes de empaquetar:
+```powershell
+  Get-ChildItem -Directory -Recurse -Include bin, obj | Remove-Item -Recurse -Force
+
+```
+
+Adicionalmente, se configuró el archivo estricto de exclusión `.gitignore`.
+
+### 🔹 Fase 4: Despliegue de la API para Consumo Externo
+
+* **Contexto del Prompt:** *“Ya, ahora en render no usare swgagger pero mi catedratico tiene que hacer peticiones a la API, como le hago o como debe de aparecer”*
+* **Respuesta y Solución:** La IA rediseñó el punto de entrada en el `Program.cs` reemplazando la amarra de red local de `localhost` por una directiva de escucha universal `http://*:{port}`, permitiendo que la API capture de forma dinámica la variable de entorno asignada por el balanceador de carga de Render.
+
+---
+
+## 🛠️ 3. Correcciones Realizadas (Historial de Errores vs. Soluciones)
+
+| Error de Origen (Log de Consola) | Causa Raíz Encontrada | Solución Técnica Aplicada |
+| --- | --- | --- |
+| **`error CS0117 / CS1061`** | Propiedades inexistentes o cruzadas (`CostoEnvio` / `Precio`) en el armado manual de objetos del test. | Se saneó el mock de datos reduciendo la carga de inicialización únicamente a propiedades primitivas seguras (`Id` y `Nombre`). |
+| **`warning xUnit2002`** | Uso inválido del analizador `Assert.NotNull()` sobre una tupla estructurada de valores nativos. | Se reemplazó por la aserción booleana explícita `Assert.True(resultado.Success)`. |
+| **`Port Scan Timeout (Render)`** | Trabar la aplicación en un puerto IP cableado (`localhost:5000`) inaccesible para internet. | Configuración de mapeo dinámico de sockets mediante `Environment.GetEnvironmentVariable("PORT")`. |
+
+---
+
+## 🧠 4. Reflexión Académica del Estudiante
+
+El desarrollo de este examen final reafirmó que el ciclo de vida del software va mucho más allá de escribir código que funcione a nivel local. Enfrentar errores de infraestructura, dependencias corruptas y diferencias entre entornos de desarrollo (Local) y producción (Nube) representa el verdadero reto de la ingeniería.
+
+La interacción estratégica con la Inteligencia Artificial bajo la modalidad de **Pair Programming** fue un catalizador crítico. En lugar de automatizar ciegamente el trabajo, el uso de la IA me obligó a actuar como un arquitecto de software: analizando logs densos, interpretando el comportamiento de la memoria del servidor de pruebas de xUnit y tomando decisiones de optimización de DevOps (como la purga de las carpetas `bin` y `obj` mediante comandos y la implementación de un archivo `.gitignore` robusto).
+
+El resultado final no es solo un código que aprueba el examen, sino una API REST limpia, escalable, con puertos elásticos configurados para entornos reales de nube y respaldada por un escudo de pruebas unitarias automatizadas que garantizan que las reglas críticas del negocio funcionen exactamente bajo cualquier condición de estrés.
 ---
 
 ## Catálogo y Firma de Endpoints (API JSON)
