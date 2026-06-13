@@ -13,7 +13,7 @@ namespace ExamenFinal_Analisis
 
             // 1. Configuración de puertos para Render
             var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-            builder.WebHost.UseUrls($"http://localhost:{port}");
+            builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
             // 2. Configuración de Swagger
             builder.Services.AddEndpointsApiExplorer();
