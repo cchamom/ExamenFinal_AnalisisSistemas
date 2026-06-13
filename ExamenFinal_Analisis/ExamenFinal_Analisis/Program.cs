@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using ExamenFinal_Analisis.Data;      
-using ExamenFinal_Analisis.Services;  
+using ExamenFinal_Analisis.Data;
+using ExamenFinal_Analisis.Services;
+using Microsoft.OpenApi.Models;
 
 namespace ExamenFinal_Analisis
 {
@@ -10,59 +11,60 @@ namespace ExamenFinal_Analisis
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // 1. Configuración de puertos para Render
             var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
             builder.WebHost.UseUrls($"http://localhost:{port}");
 
-            // =========================================================================
-            // NUEVOS SERVICIOS AGREGADOS AL CONTENEDOR (Sin eliminar lo existente)
-            // =========================================================================
-            
-            // 1. Configuración de la conexión a SQLite usando el string de la app o uno por defecto
+            // 2. Configuración de Swagger
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                // Usamos el nombre completo para evitar errores de namespace
+                c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "API Envíos Rápidos GT", Version = "v1" });
+            });
+
+            // 3. Servicios de Base de Datos y Lógica
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=enviosrapidos.db"));
 
-            // 2. Inyección de dependencia de la capa de lógica de negocio
             builder.Services.AddScoped<IPaqueteService, PaqueteService>();
-
-            // =========================================================================
-
-            // Add services to the container.
             builder.Services.AddControllersWithViews();
 
+            // 4. ÚNICA DEFINICIÓN DE app
             var app = builder.Build();
 
-            // =========================================================================
-            // INICIALIZACIÓN DE BASE DE DATOS Y SEMILLAS AL ARRANCAR LA APLICACIÓN
-            // =========================================================================
+            // 5. Habilitar Swagger en la RAÍZ
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "API Envíos Rápidos GT V1");
+                c.RoutePrefix = string.Empty; 
+            });
+
+            // 6. Inicialización de Base de Datos
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                // Crea la BD SQLite e inserta automáticamente los 18 departamentos y los 5 estados
-                db.Database.EnsureCreated(); 
+                db.Database.EnsureCreated();
             }
-            // =========================================================================
 
-            // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
             app.UseHttpsRedirection();
             app.UseRouting();
-
             app.UseAuthorization();
 
             app.MapStaticAssets();
-
             app.MapControllers();
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Paquetes}/{action=Rastreo}/{id?}") // Nota: Puedes dejarlo como "Home/Index" si prefieres que esa sea tu landing inicial
-                .WithStaticAssets();  
-            
+                pattern: "{controller=Paquetes}/{action=Rastreo}/{id?}")
+                .WithStaticAssets();
+
             app.Run();
         }
     }
