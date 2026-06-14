@@ -98,8 +98,6 @@ La API se encuentra completamente desplegada, configurada y operativa en la nube
   * Al arrancar la aplicación por primera vez en cualquier entorno limpio, la tabla `Estados` debe poblarse automáticamente con los registros del 1 al 5.
   * Los valores de prioridad lógica (`Orden`) deben persistirse de manera estricta para asegurar el correcto funcionamiento de las validaciones de flujo de la HU06.
 
----
-Aquí tienes el informe completo estructurado exactamente en formato **README.md** con bloques de código Markdown listos para que los agregues directamente a tu repositorio o documento de entrega:
 
 ---
 # INFORME TÉCNICO Y PROMTS
